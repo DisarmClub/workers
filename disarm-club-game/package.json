@@ -1,9 +1,13 @@
 {
-  "name": "disarm-club-game",
+  "name": "@disarm-club/cloudflare-worker-game-durable-object",
   "version": "1.0.0",
   "description": "",
   "module": "./src/index.mjs",
   "devDependencies": {
     "@cloudflare/wrangler": "^1.19.3"
+  },
+  "scripts": {
+    "publish": "wrangler publish",
+    "build": "echo cool"
   }
 }

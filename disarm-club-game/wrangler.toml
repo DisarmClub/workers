@@ -1,14 +1,12 @@
 name = "disarm-club-game"
 # type = "javascript" is required to use the `[build]` section
 type = "javascript"
-workers_dev = true
-account_id = ""
-route = ""
-zone_id = ""
+workers_dev = false
+account_id = "184b85b87e2289c4b18d7aaf41cd53cd"
 compatibility_date = "2021-10-10"
 
 [build]
-command = "npm ci && npm run build"
+command = "npm run build"
 [build.upload]
 dir = "src"
 format = "modules"
