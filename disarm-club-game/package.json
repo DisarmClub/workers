@@ -1,0 +1,9 @@
+{
+  "name": "disarm-club-game",
+  "version": "1.0.0",
+  "description": "",
+  "module": "./src/index.mjs",
+  "devDependencies": {
+    "@cloudflare/wrangler": "^1.19.3"
+  }
+}
