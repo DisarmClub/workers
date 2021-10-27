@@ -1,4 +1,8 @@
 // Worker
+export function send404() {
+  return new Response("Not found", {status: 404})
+}
+
 
 export default {
   async fetch(request, env) {
@@ -19,7 +23,7 @@ export default {
           return handleApiRequest(path.slice(1), request, env);
 
         default:
-          return new Response("Not found", {status: 404});
+          return send404();
       }
     });
   }
@@ -45,11 +49,48 @@ async function handleErrors(request, func) {
 }
 
 async function handleApiRequest(path, request, env) {
-  let id = env.games.idFromName("A")
-  let obj = env.games.get(id)
-  let resp = await obj.fetch(request);
-  let count = await resp.text();
-  return new Response("Durable Object 'A' count: " + count);
+  switch (path[0]) {
+    case "games":
+      return handleGames(path.slice(1), request, env)
+    default:
+      return send404();
+  }
+}
+
+function createShortCode(date) {
+  const ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+  const dayTimeInMills =
+    date.getMilliseconds() +
+    1000 * (date.getSeconds() + 60 * (date.getMinutes() + 60 * date.getHours()))
+
+  const maxDayTimeInMills = 86400000 // 24 * 60 * 60 * 1000
+  const maxFourDigitB26 = ALPHA.length ** 4
+  const decimalFourDigitB26 =
+    (dayTimeInMills / maxDayTimeInMills) * maxFourDigitB26
+
+  const shortCode =
+    ALPHA.charAt(Math.floor(decimalFourDigitB26 / (ALPHA.length ** 3)) % ALPHA.length) +
+    ALPHA.charAt(Math.floor(decimalFourDigitB26 / (ALPHA.length ** 2)) % ALPHA.length) +
+    ALPHA.charAt(Math.floor(decimalFourDigitB26 / ALPHA.length) % ALPHA.length) +
+    ALPHA.charAt(decimalFourDigitB26 % ALPHA.length)
+
+  return shortCode
+}
+
+async function handleGames(path, request, env) {
+  if (path.length === 0) {
+    if (request.method == "POST") {
+      env.games.idFromName(createShortCode(new Date()))
+    }
+  } else {
+    let shortCode = createShortCode(new Date())
+    let id = env.games.idFromName(shortCode)
+    let obj = env.games.get(id)
+    let resp = await obj.fetch(request);
+    let count = await resp.text();
+    return new Response(`Durable Object '${shortCode}' count: ${count}`);
+  }
 }
 
 
