@@ -13,15 +13,8 @@ format = "modules"
 main = "./index.mjs"
 
 [durable_objects]
-bindings = [
-  { name = "games", class_name = "DisarmClubGame" },
-  { name = "limiters", class_name = "RateLimiter" },
-]
+bindings = [{ name = "games", class_name = "DisarmClubGame" }]
 
 [[migrations]]
 tag = "v1"
 new_classes = ["DisarmClubGame"]
-
-[[migrations]]
-tag = "v2"
-new_classes = ["RateLimiter"]

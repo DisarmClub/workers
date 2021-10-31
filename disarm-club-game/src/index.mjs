@@ -1,20 +1,21 @@
-// Worker
 export function send404() {
   return new Response("Not found", {status: 404})
+}
+
+export function send405() {
+  return new Response("Method Not Allowed", {status: 405})
 }
 
 
 export default {
   async fetch(request, env) {
     return await handleErrors(request, async () => {
-      // We have received an HTTP request! Parse the URL and route the request.
-
       let url = new URL(request.url);
       let path = url.pathname.slice(1).split('/');
 
       if (!path[0]) {
-        // Serve our HTML at the root path.
-        return new Response('', {headers: {"Content-Type": "text/html;charset=UTF-8"}});
+        // No base resource
+        return send404()
       }
 
       switch (path[0]) {
@@ -23,6 +24,7 @@ export default {
           return handleApiRequest(path.slice(1), request, env);
 
         default:
+          // No resources other than api
           return send404();
       }
     });
@@ -81,17 +83,31 @@ function createShortCode(date) {
 async function handleGames(path, request, env) {
   if (path.length === 0) {
     if (request.method == "POST") {
-      env.games.idFromName(createShortCode(new Date()))
+      return handleCreateGame(request, env)
     }
-  } else {
+    return send405()
+  }
+
+  if (path[0].match(/^[a-zA-Z]{4}$/)) {
+    if (request.method == 'GET') {
+      return handleGetGameById(path[0], request, env)
+    }
+    return send405()
     let shortCode = createShortCode(new Date())
     let id = env.games.idFromName(shortCode)
     let obj = env.games.get(id)
     let resp = await obj.fetch(request);
-    let count = await resp.text();
-    return new Response(`Durable Object '${shortCode}' count: ${count}`);
+    let gameState = await resp.text();
+    return new Response(`Durable Object '${shortCode}' count: ${gameState}`);
   }
 }
+
+async function handleCreateGame(env) {
+  const id = env.games.newUniqueId()
+
+}
+
+async function handleGetGameById() {}
 
 
 export class DisarmClubGame {
@@ -101,71 +117,13 @@ export class DisarmClubGame {
     // initialization completes.
     this.state.blockConcurrencyWhile(async () => {
         let stored = await this.state.storage.get("value");
-        this.value = stored || 0;
+        this.value = stored || {isEnded: false, code: [1,2,3,4]};
     })
   }
 
   async fetch(request) {
     let currentValue = this.value;
-    return new Response(currentValue);
+    return new Response(Json.stringify(currentValue));
   }
 }
 
-export class RateLimiter {
-  constructor(_controller, _env) {
-    this.nextAllowedTime = 0;
-  }
-
-  async fetch(request) {
-    return await handleErrors(request, async () => {
-      let now = Date.now();
-
-      this.nextAllowedTime = Math.max(now, this.nextAllowedTime);
-
-      if (request.method == "POST") {
-        this.nextAllowedTime += 10;
-      }
-
-      let timeout = Math.max(0, this.nextAllowedTime - now - 20000);
-      return new Response(timeout);
-    })
-  }
-}
-
-class RateLimiterClient {
-  constructor(getLimiterStub, reportError) {
-    this.getLimiterStub = getLimiterStub;
-    this.reportError = reportError;
-
-    this.limiter = getLimiterStub();
-    this.isEnhancingCalm = false;
-  }
-
-  checkLimit() {
-    if (this.isEnhancingCalm) {
-      return false;
-    }
-    this.isEnhancingCalm = true;
-    this.callLimiter();
-    return true;
-  }
-
-  async callLimiter() {
-    try {
-      let response;
-      try {
-        response = await this.limiter.fetch("https://dev/null", {method: "POST"});
-      } catch (err) {
-        this.limiter = this.getLimiterStub();
-        response = await this.limiter.fetch("https://dev/null", {method: "POST"});
-      }
-
-      let timeout = +(await response.text());
-      await new Promise(resolve => setTimeout(resolve, timeout));
-
-      this.isEnhancingCalm = false;
-    } catch (err) {
-      this.reportError(err);
-    }
-  }
-}
