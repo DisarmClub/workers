@@ -18,3 +18,11 @@ bindings = [{ name = "games", class_name = "DisarmClubGame" }]
 [[migrations]]
 tag = "v1"
 new_classes = ["DisarmClubGame"]
+
+[[migrations]]
+tag = "v2"
+new_classes = ["RateLimiter"]
+
+[[migrations]]
+tag = "v3"
+deleted_classes = ["RateLimiter"]
