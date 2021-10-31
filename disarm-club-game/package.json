@@ -4,6 +4,7 @@
   "description": "",
   "module": "./src/index.mjs",
   "devDependencies": {
+    "@cloudflare/workers-types": "^2.2.2",
     "@cloudflare/wrangler": "^1.19.3"
   },
   "scripts": {
